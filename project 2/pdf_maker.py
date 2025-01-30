@@ -1,31 +1,42 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer
+import json
 
-vandaag = datetime.date.today()
-zeven_dagen_later = vandaag + datetime.timedelta(days=7)
-
-btw = 21
-
-bedrijfsnaam = input('Wat is uw bedrijfsnaam? ')
-adres = input('Wat is uw adres? ')
-postcode = input('Wat is uw postcode? ')
-mail = input('Wat is uw email? ')
-product = input('Wat wilt u kopen? ')
-aantal = input('Hoeveel wilt u? ')
-Bankrekeningnummer = input("wit is je Bankrekeningnummer")
-Ten_name_van = input("Ten name van: ")
-Betalingsreferentie = input("Betalingsreferentie: ")
+with open('2000-096.json', 'r') as file:
+    data = json.load(file)
 
 bestelijst = {
-    "besteling": [1, "cloud" , 7.00,],
-    "Alie": [2, "pc", 9.00,],
-    "Aice": [1, "nid", 19.00,],
-    "lice": [3, "lid", 700.00,],
 
 }
+
+ordernummer = data['order']['ordernummer']
+orderdatum = data['order']['orderdatum']
+betaaltermijn = data['order']['betaaltermijn']
+
+naam = data['order']['klant']['naam']
+adres = data['order']['klant']['adres']
+postcode = data['order']['klant']['postcode']
+stad = data['order']['klant']['stad']
+KVK_nummer = data['order']['klant']['KVK-nummer']
+
+# producten
+
+productnaam = data['order']['producten'][0]['productnaam']
+aantal = data['order']['producten'][0]['aantal']
+prijs_per_stuk_excl_btw = data['order']['producten'][0]['prijs_per_stuk_excl_btw']
+btw = data['order']['producten'][0]['btw_percentage']
+
+for i in range(1):
+    bestelijst[f"bestelling {i}"] = [aantal, productnaam, prijs_per_stuk_excl_btw]
+
+mail = "info@***********"
+Bankrekeningnummer = 10242982854924
+Ten_name_van = "codemind"
+Betalingsreferentie = 1058901850195
+
+
 
 pdf_bestand = "C:\school\code\Project-2---How-to-make-money-with-software-\project 2\pdf_invoice\output.pdf"
 
@@ -45,9 +56,9 @@ c.drawString(80, 670, f"info@codeminds.nl")
 c.drawString(80, 650, f"98765432")
 c.drawString(80, 630, f"Nl987654321B01")
 
-c.drawString(80, 580, f"Factuurnummer: CM-2025-001")
-c.drawString(80, 560, f"Factuurdatum: {vandaag}")
-c.drawString(80, 540, f"Vervaldatum: {zeven_dagen_later}")
+c.drawString(80, 580, f"Factuurnummer: {ordernummer}")
+c.drawString(80, 560, f"Factuurdatum: {orderdatum}")
+c.drawString(80, 540, f"Vervaldatum: {betaaltermijn}")
 
 c.setFont("Helvetica-Bold", 12)
 
@@ -56,19 +67,20 @@ c.drawString(80, 490, f"factuur aan")
 c.setFont("Helvetica", 12)
 
 
-c.drawString(80, 470, f"{bedrijfsnaam}")
+c.drawString(80, 470, f"{naam}")
 c.drawString(80, 450, f"{adres}")
 c.drawString(80, 430, f"{postcode}")
 c.drawString(80, 410, f"{mail}")
 
-c.drawString(80, 370, f"Aantal : omschrijfing : Prijs per stuk : Totaalprijs")
+c.drawString(80, 370, f"Aantal      :      omschrijfing      :      Prijs per stuk      :      Totaalprijs")
 
 p = 370
 
 for naam in bestelijst:
-
     totaal = bestelijst[naam][0] * bestelijst[naam][2]
-
+    
+    totaal = round(totaal, 2)
+    
     bestelijst[naam].append(totaal)
 
 for naam in bestelijst:
@@ -78,8 +90,8 @@ for naam, waarden in bestelijst.items():
     p -= 20
     c.drawString(80, p, f"   {waarden[0]}")
     c.drawString(120, p, f"   {waarden[1]}")
-    c.drawString(195, p, f"   {waarden[2]}")
-    c.drawString(250, p, f"   {waarden[3]}")
+    c.drawString(260, p, f"   {waarden[2]}")
+    c.drawString(370, p, f"   {waarden[3]}")
 
 subtotaal = []
 
@@ -93,8 +105,9 @@ c.drawString(80, 190, f"Subtotaal: {sub_totaal}")
 c.drawString(80, 170, f"btw: {btw}%")
 
 btw_bedrag = sub_totaal * (btw / 100)
+btw_bedrag += sub_totaal
 
-c.drawString(80, 150, f"totaal: {btw_bedrag}")
+c.drawString(80, 150, f"totaal: {round(btw_bedrag),2}")
 
 c.setFont("Helvetica-Bold", 12)
 c.drawString(80, 110, f"betaal gegevens")
